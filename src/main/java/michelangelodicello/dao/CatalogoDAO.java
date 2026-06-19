@@ -3,7 +3,9 @@ package michelangelodicello.dao;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 import michelangelodicello.entities.Catalogo;
-import michelangelodicello.exception.NotFoundException;
+import michelangelodicello.entities.Libro;
+
+import java.util.List;
 
 public class CatalogoDAO {
     private final EntityManager em;
@@ -25,9 +27,11 @@ public class CatalogoDAO {
     }
 
     public Catalogo findByIsbn(String isbn) {
-        Catalogo result = em.find(Catalogo.class, isbn);
-        if (result == null) throw new NotFoundException(result);
-        return result;
+        return em.createQuery("SELECT c FROM Catalogo c WHERE c.isbn = :isbn", Catalogo.class)
+                .setParameter("isbn", isbn)
+                .getResultStream()
+                .findFirst()
+                .orElse(null);
     }
 
     public void deleteByIsbn(String isbn) {
@@ -41,5 +45,23 @@ public class CatalogoDAO {
             if (transaction.isActive()) transaction.rollback();
             throw e;
         }
+    }
+
+    public List<Catalogo> findByAnnoPubblicazione(int anno) {
+        return em.createQuery("SELECT c FROM Catalogo c WHERE YEAR(c.annoPubblicazione) = :anno", Catalogo.class)
+                .setParameter("anno", anno)
+                .getResultList();
+    }
+
+    public List<Libro> findByAutore(String autore) {
+        return em.createQuery("SELECT l FROM Libro l WHERE l.autore = :autore", Libro.class)
+                .setParameter("autore", autore)
+                .getResultList();
+    }
+
+    public List<Catalogo> findByTitolo(String parteTitolo) {
+        return em.createQuery("SELECT c FROM Catalogo c WHERE LOWER(c.titolo) LIKE LOWER(:titolo)", Catalogo.class)
+                .setParameter("titolo", "%" + parteTitolo + "%")
+                .getResultList();
     }
 }
